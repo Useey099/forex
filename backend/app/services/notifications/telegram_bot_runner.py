@@ -177,37 +177,9 @@ class TelegramBotRunner:
 
                 is_gold = "XAU" in clean_sym
                 is_silver = "XAG" in clean_sym
-                badge = "🥇 <b>GOLD (XAU/USD)</b>" if is_gold else ("🥈 <b>SILVER (XAG/USD)</b>" if is_silver else f"📊 <b>{clean_sym}</b>")
 
-                st_val = analysis.state.value if hasattr(analysis.state, "value") else str(analysis.state)
-                if st_val == AnalysisStateEnum.VALID_SETUP.value:
-                    st_header = "🟢 🎯 <b>CONFIRMED VALID SETUP</b>"
-                elif st_val == AnalysisStateEnum.POTENTIAL_SETUP.value:
-                    st_header = "🟡 ⚠️ <b>SETUP FORMING (WATCH)</b>"
-                else:
-                    st_header = f"⚪ ℹ️ <b>MARKET STATUS: {st_val}</b>"
-
-                lines = [
-                    st_header,
-                    f"{badge} | ⏱ <b>15M</b> | 🏛 <b>{(analysis.session_name or 'Active').upper()}</b>",
-                    "",
-                    "💡 <b>Institutional Narrative:</b>",
-                    f"<blockquote>{analysis.summary}</blockquote>",
-                ]
-
-                if analysis.condition_breakdown:
-                    lines.append("📋 <b>Strategy Checklist:</b>")
-                    for c in analysis.condition_breakdown[:5]:
-                        icon = "✅" if c.satisfied else "❌"
-                        notes = f" ({c.evidence})" if c.evidence else ""
-                        lines.append(f"{icon} <b>{c.condition}</b>{notes}")
-                    lines.append("")
-
-                now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-                lines.append(f"⏰ <i>{now_str}</i>")
-                lines.append("🤖 <i>Forex AI Institutional Execution Engine</i>")
-
-                await tg_svc.send_message("\n".join(lines), chat_id=chat_id)
+                card_msg = tg_svc._format_setup_message(analysis)
+                await tg_svc.send_message(card_msg, chat_id=chat_id)
 
         except Exception as e:
             logger.error(f"Error running Telegram on-demand analysis for {clean_sym}: {e}", exc_info=True)
