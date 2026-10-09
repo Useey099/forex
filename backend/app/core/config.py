@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = Field(default="")
     AI_MODEL_NAME: str = Field(default="gemini-1.5-flash")
 
+    # Telegram Bot Settings (Focused primarily on XAUUSD & XAGUSD)
+    TELEGRAM_BOT_TOKEN: str = Field(default="")
+    TELEGRAM_CHAT_ID: str = Field(default="")
+    TELEGRAM_ENABLED: bool = Field(default=True)
+    TELEGRAM_TARGET_PAIRS: List[str] = ["XAUUSD", "XAGUSD"]
+    TELEGRAM_NOTIFY_ON_VALID_SETUP: bool = Field(default=True)
+    TELEGRAM_NOTIFY_ON_POTENTIAL_SETUP: bool = Field(default=True)
+
     # Initial Instruments
     TARGET_INSTRUMENTS: List[str] = [
         "XAUUSD",

@@ -246,7 +246,16 @@ class NotificationService:
                 except Exception as e:
                     logger.warning(f"Failed to deliver FCM push to device {dev.id}: {e}")
 
-        status_val = "SENT" if (devices and sent_count > 0) else ("SENT_SIMULATED" if devices else "PENDING_NO_DEVICES")
+        # 6. Dispatch to Telegram Bot (primarily for XAUUSD and XAGUSD)
+        try:
+            from app.services.notifications.telegram_service import get_telegram_service
+            tg_svc = get_telegram_service()
+            if tg_svc.is_configured:
+                await tg_svc.send_setup_alert(analysis)
+        except Exception as tg_err:
+            logger.warning(f"Failed to dispatch Telegram setup alert: {tg_err}")
+
+        status_val = "SENT" if devices else "PENDING_NO_DEVICES"
         now = datetime.now(timezone.utc)
 
         notification_record = Notification(

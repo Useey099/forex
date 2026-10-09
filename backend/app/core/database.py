@@ -91,6 +91,24 @@ async def init_db() -> None:
             async_session_factory.configure(bind=engine)
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
-            logger.info("Local SQLite database initialized and ready at ./forex_ai.db.")
         else:
             raise
+
+    # Seed default instruments if database is empty (in non-test mode)
+    if settings.ENVIRONMENT != "test":
+        try:
+            async with async_session_factory() as session:
+                from app.models.instrument import Instrument
+                from sqlalchemy import select
+                stmt = select(Instrument).limit(1)
+                res = await session.execute(stmt)
+                if not res.scalar_one_or_none():
+                    for sym in settings.TARGET_INSTRUMENTS:
+                        base = sym[:3] if len(sym) >= 6 else sym
+                        quote = sym[3:] if len(sym) >= 6 else "USD"
+                        pip = 0.01 if ("JPY" in quote or "XAU" in sym or "XAG" in sym) else 0.0001
+                        session.add(Instrument(symbol=sym, base_asset=base, quote_asset=quote, pip_size=pip, is_active=True))
+                    await session.commit()
+                    logger.info(f"Seeded {len(settings.TARGET_INSTRUMENTS)} default instruments into database (including XAUUSD and XAGUSD).")
+        except Exception as seed_exc:
+            logger.warning(f"Could not seed default instruments: {seed_exc}")
