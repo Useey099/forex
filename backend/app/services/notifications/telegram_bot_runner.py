@@ -38,8 +38,28 @@ class TelegramBotRunner:
             return
 
         self._running = True
+        await self._register_commands()
         self._task = asyncio.create_task(self._poll_loop())
         logger.info("TelegramBotRunner: Interactive command polling loop started.")
+
+    async def _register_commands(self) -> None:
+        """Registers the command list with Telegram API so they appear in the UI menu."""
+        token = settings.TELEGRAM_BOT_TOKEN
+        if not token:
+            return
+        commands = [
+            {"command": "gold", "description": "🥇 15m Gold (XAUUSD) SMC/ICT Analysis"},
+            {"command": "silver", "description": "🥈 15m Silver (XAGUSD) SMC/ICT Analysis"},
+            {"command": "setups", "description": "🎯 Scan for Active High-Probability Setups"},
+            {"command": "session", "description": "🏛 Active Session & Killzone Windows"},
+            {"command": "status", "description": "⚡ Backend Health & Live Scanner Uptime"},
+            {"command": "help", "description": "📖 Help Menu & Command Reference"},
+        ]
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                await client.post(f"https://api.telegram.org/bot{token}/setMyCommands", json={"commands": commands})
+        except Exception as e:
+            logger.debug(f"Could not register Telegram commands: {e}")
 
     async def stop(self) -> None:
         """Stops the listener gracefully."""
