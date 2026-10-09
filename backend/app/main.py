@@ -9,6 +9,7 @@ from app.api import api_router
 from app.services.market_data import get_market_data_provider, IngestionWorker
 from app.services.ai import get_session_scanner
 from app.services.notifications import get_economic_event_worker
+from app.services.notifications.telegram_bot_runner import get_telegram_bot_runner
 
 ingestion_worker: IngestionWorker | None = None
 
@@ -36,10 +37,16 @@ async def lifespan(app: FastAPI):
         event_worker = get_economic_event_worker()
         await event_worker.start()
 
+        # Launch interactive Telegram bot command listener
+        tg_bot = get_telegram_bot_runner()
+        await tg_bot.start()
+
     yield
 
     # Shutdown
     logger.info("Initiating graceful shutdown...")
+    tg_bot = get_telegram_bot_runner()
+    await tg_bot.stop()
     event_worker = get_economic_event_worker()
     await event_worker.stop()
     scanner = get_session_scanner()
